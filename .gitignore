@@ -1,0 +1,19 @@
+# Backend
+backend/node_modules/
+backend/dist/
+backend/.env
+
+# Flutter
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/pubspec.lock
+
+# Docker / infra
+certbot/
+.env
+
+# OS
+.DS_Store
+Thumbs.db

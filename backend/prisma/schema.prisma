@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  birthday     DateTime?
+  fcmToken     String?
+  pairCode     String    @unique
+  coupleId     String?
+  couple       Couple?   @relation("CoupleMembers", fields: [coupleId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Inverse relations
+  eventsCreated   Event[]
+  memesUploaded   Meme[]
+  remindersCreated Reminder[]
+  locations       Location[]
+  diaryEntries    DiaryEntry[]
+  thoughtsSent    Thought[]
+  memeReactions   MemeReaction[]
+  refreshTokens   RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+// ─── Couples ─────────────────────────────────────────────────────────────────
+
+model Couple {
+  id          String    @id @default(cuid())
+  user1Id     String    @unique
+  user2Id     String    @unique
+  anniversary DateTime?
+  createdAt   DateTime  @default(now())
+
+  members      User[]        @relation("CoupleMembers")
+  events       Event[]
+  memes        Meme[]
+  reminders    Reminder[]
+  locations    Location[]
+  diaryEntries DiaryEntry[]
+  gameSessions GameSession[]
+  thoughts     Thought[]
+
+  @@map("couples")
+}
+
+// ─── Schedule ────────────────────────────────────────────────────────────────
+
+model Event {
+  id              String        @id @default(cuid())
+  coupleId        String
+  couple          Couple        @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  title           String
+  description     String?
+  startAt         DateTime
+  endAt           DateTime?
+  category        EventCategory @default(OTHER)
+  reminderMinutes Int?
+  isRecurring     Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([coupleId, startAt])
+  @@map("events")
+}
+
+enum EventCategory {
+  DATE
+  TRAVEL
+  SPECIAL
+  BIRTHDAY
+  ANNIVERSARY
+  OTHER
+}
+
+// ─── Memes ───────────────────────────────────────────────────────────────────
+
+model Meme {
+  id         String         @id @default(cuid())
+  coupleId   String
+  couple     Couple         @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  uploadedBy String
+  uploader   User           @relation(fields: [uploadedBy], references: [id])
+  imageUrl   String
+  caption    String?
+  reactions  MemeReaction[]
+  createdAt  DateTime       @default(now())
+
+  @@index([coupleId, createdAt(sort: Desc)])
+  @@map("memes")
+}
+
+model MemeReaction {
+  id     String @id @default(cuid())
+  memeId String
+  meme   Meme   @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  emoji  String
+
+  @@unique([memeId, userId, emoji])
+  @@map("meme_reactions")
+}
+
+// ─── Reminders ───────────────────────────────────────────────────────────────
+
+model Reminder {
+  id          String         @id @default(cuid())
+  coupleId    String
+  couple      Couple         @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  createdBy   String
+  creator     User           @relation(fields: [createdBy], references: [id])
+  targetUser  ReminderTarget
+  title       String
+  description String?
+  scheduledAt DateTime
+  recurrence  Recurrence     @default(NONE)
+  isCompleted Boolean        @default(false)
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([coupleId, scheduledAt])
+  @@map("reminders")
+}
+
+enum ReminderTarget {
+  SELF
+  PARTNER
+  BOTH
+}
+
+enum Recurrence {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// ─── Distance / Location ─────────────────────────────────────────────────────
+
+model Location {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coupleId   String
+  couple     Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  latitude   Float
+  longitude  Float
+  recordedAt DateTime @default(now())
+
+  @@index([userId, recordedAt(sort: Desc)])
+  @@map("locations")
+}
+
+// ─── Diary ───────────────────────────────────────────────────────────────────
+
+model DiaryEntry {
+  id             String   @id @default(cuid())
+  coupleId       String
+  couple         Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User     @relation(fields: [authorId], references: [id])
+  title          String?
+  content        String
+  mood           String
+  imageUrl       String?
+  isPrivate      Boolean  @default(false)
+  entryDate      DateTime
+  partnerReacted Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([coupleId, entryDate(sort: Desc)])
+  @@map("diary_entries")
+}
+
+// ─── Minigames ───────────────────────────────────────────────────────────────
+
+model GameSession {
+  id         String     @id @default(cuid())
+  coupleId   String
+  couple     Couple     @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  gameType   GameType
+  status     GameStatus @default(WAITING)
+  winnerId   String?
+  data       Json       @default("{}")
+  createdAt  DateTime   @default(now())
+  finishedAt DateTime?
+
+  @@index([coupleId, createdAt(sort: Desc)])
+  @@map("game_sessions")
+}
+
+enum GameType {
+  TRUTH_OR_DARE
+  KNOW_ME
+  ROULETTE
+  STORY
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+}
+
+// ─── Thoughts ────────────────────────────────────────────────────────────────
+
+model Thought {
+  id          String      @id @default(cuid())
+  coupleId    String
+  couple      Couple      @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User        @relation(fields: [senderId], references: [id])
+  content     String      @db.VarChar(500)
+  tone        ThoughtTone @default(ROMANTIC)
+  deliverAt   DateTime?
+  isDelivered Boolean     @default(false)
+  isRead      Boolean     @default(false)
+  readAt      DateTime?
+  isFavorite  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  @@index([coupleId, deliverAt])
+  @@map("thoughts")
+}
+
+enum ThoughtTone {
+  ROMANTIC
+  FUNNY
+  NOSTALGIC
+  URGENT
+}

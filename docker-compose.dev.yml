@@ -1,0 +1,30 @@
+# Levanta solo postgres y redis para desarrollo local
+# Uso: docker compose -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: alma_db_dev
+    environment:
+      POSTGRES_DB: alma
+      POSTGRES_USER: alma
+      POSTGRES_PASSWORD: alma_dev_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: alma_redis_dev
+    command: redis-server --requirepass redis_dev_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

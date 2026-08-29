@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isCoupleUser(coupleId) {
+      let couple = get(/databases/$(database)/documents/couples/$(coupleId)).data;
+      return couple.user1Id == request.auth.uid || couple.user2Id == request.auth.uid;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ── Usuarios ──────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow write: if isAuth() && isOwner(userId);
+    }
+
+    // ── Códigos de pareja (lectura pública para vinculación) ───────────────
+    match /pairCodes/{code} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── Parejas ───────────────────────────────────────────────────────────
+    match /couples/{coupleId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+
+      // Sub-colecciones: acceso para desarrollo
+      match /events/{eventId} {
+        allow read, write: if isAuth();
+      }
+      match /diary/{entryId} {
+        allow read, write: if isAuth();
+      }
+      match /thoughts/{thoughtId} {
+        allow read, write: if isAuth();
+      }
+      match /series/{seriesId} {
+        allow read, write: if isAuth();
+      }
+    }
+
+    // ── Series personales (sin pareja vinculada) ──────────────────────────
+    match /users/{userId}/series/{seriesId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // ── Diario personal (sin pareja vinculada) ────────────────────────────
+    match /users/{userId}/diary/{entryId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // ── Pensamientos personales (para testing sin pareja) ───────────────────
+    match /users/{userId}/thoughts/{thoughtId} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isOwner(userId);
+    }
+
+    // ── Ubicaciones ──────────────────────────────────────────────────────
+    match /locations/{userId} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isOwner(userId);
+    }
+  }
+}
