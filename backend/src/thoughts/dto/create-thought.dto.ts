@@ -1,5 +1,4 @@
-import { IsString, MaxLength, IsEnum, IsOptional, IsDateString } from 'class-validator';
-import { ThoughtTone } from '@prisma/client';
+import { IsString, MaxLength, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateThoughtDto {
   @IsString()
@@ -7,8 +6,8 @@ export class CreateThoughtDto {
   content: string;
 
   @IsOptional()
-  @IsEnum(ThoughtTone)
-  tone?: ThoughtTone;
+  @IsString()
+  tone?: string;
 
   @IsOptional()
   @IsDateString()
