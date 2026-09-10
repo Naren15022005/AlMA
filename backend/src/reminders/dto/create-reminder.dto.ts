@@ -1,5 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsEnum } from 'class-validator';
-import { ReminderTarget, Recurrence } from '@prisma/client';
+import { IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateReminderDto {
   @IsString()
@@ -12,10 +11,10 @@ export class CreateReminderDto {
   @IsDateString()
   scheduledAt: string;
 
-  @IsEnum(ReminderTarget)
-  targetUser: ReminderTarget;
+  @IsString()
+  targetUser: string;
 
   @IsOptional()
-  @IsEnum(Recurrence)
-  recurrence?: Recurrence;
+  @IsString()
+  recurrence?: string;
 }

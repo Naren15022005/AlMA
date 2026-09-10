@@ -1,0 +1,10 @@
+allowBuilds:
+  '@firebase/util': false
+  '@parcel/watcher': false
+  '@prisma/client': false
+  '@prisma/engines': false
+  bcrypt: false
+  msgpackr-extract: false
+  prisma: false
+  protobufjs: false
+  unrs-resolver: false

@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, Post, Patch, UseGuards, Request } from '@nestjs/common';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { MinigamesService } from './minigames.service';
-import { GameType } from '@prisma/client';
 
 @UseGuards(JwtGuard)
 @Controller('minigames')
@@ -14,7 +13,7 @@ export class MinigamesController {
   }
 
   @Post('sessions')
-  createSession(@Request() req: any, @Body('gameType') gameType: GameType) {
+  createSession(@Request() req: any, @Body('gameType') gameType: string) {
     return this.minigamesService.createSession(req.user.coupleId, gameType);
   }
 

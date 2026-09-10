@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -80,7 +80,7 @@ model Event {
   description     String?
   startAt         DateTime
   endAt           DateTime?
-  category        EventCategory @default(OTHER)
+  category      String    @default("DATE")
   reminderMinutes Int?
   isRecurring     Boolean       @default(false)
   createdAt       DateTime      @default(now())
@@ -88,15 +88,6 @@ model Event {
 
   @@index([coupleId, startAt])
   @@map("events")
-}
-
-enum EventCategory {
-  DATE
-  TRAVEL
-  SPECIAL
-  BIRTHDAY
-  ANNIVERSARY
-  OTHER
 }
 
 // ─── Memes ───────────────────────────────────────────────────────────────────
@@ -136,31 +127,17 @@ model Reminder {
   couple      Couple         @relation(fields: [coupleId], references: [id], onDelete: Cascade)
   createdBy   String
   creator     User           @relation(fields: [createdBy], references: [id])
-  targetUser  ReminderTarget
+  targetUser  String
   title       String
   description String?
   scheduledAt DateTime
-  recurrence  Recurrence     @default(NONE)
+  recurrence  String     @default("NONE")
   isCompleted Boolean        @default(false)
   completedAt DateTime?
   createdAt   DateTime       @default(now())
 
   @@index([coupleId, scheduledAt])
   @@map("reminders")
-}
-
-enum ReminderTarget {
-  SELF
-  PARTNER
-  BOTH
-}
-
-enum Recurrence {
-  NONE
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
 }
 
 // ─── Distance / Location ─────────────────────────────────────────────────────
@@ -207,28 +184,15 @@ model GameSession {
   id         String     @id @default(cuid())
   coupleId   String
   couple     Couple     @relation(fields: [coupleId], references: [id], onDelete: Cascade)
-  gameType   GameType
-  status     GameStatus @default(WAITING)
+  gameType   String
+  status     String @default("WAITING")
   winnerId   String?
-  data       Json       @default("{}")
+  data       String     @default("{}")
   createdAt  DateTime   @default(now())
   finishedAt DateTime?
 
   @@index([coupleId, createdAt(sort: Desc)])
   @@map("game_sessions")
-}
-
-enum GameType {
-  TRUTH_OR_DARE
-  KNOW_ME
-  ROULETTE
-  STORY
-}
-
-enum GameStatus {
-  WAITING
-  IN_PROGRESS
-  FINISHED
 }
 
 // ─── Thoughts ────────────────────────────────────────────────────────────────
@@ -239,8 +203,8 @@ model Thought {
   couple      Couple      @relation(fields: [coupleId], references: [id], onDelete: Cascade)
   senderId    String
   sender      User        @relation(fields: [senderId], references: [id])
-  content     String      @db.VarChar(500)
-  tone        ThoughtTone @default(ROMANTIC)
+  content     String
+  tone        String   @default("ROMANTIC")
   deliverAt   DateTime?
   isDelivered Boolean     @default(false)
   isRead      Boolean     @default(false)
@@ -252,9 +216,4 @@ model Thought {
   @@map("thoughts")
 }
 
-enum ThoughtTone {
-  ROMANTIC
-  FUNNY
-  NOSTALGIC
-  URGENT
-}
+

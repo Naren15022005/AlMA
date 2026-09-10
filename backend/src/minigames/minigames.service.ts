@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { GameType } from '@prisma/client';
+type GameType = 'TRUTH_OR_DARE' | 'ROULETTE' | 'KNOW_ME' | 'STORY';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../gateway/events.gateway';
 
@@ -39,9 +39,9 @@ export class MinigamesService {
     });
   }
 
-  async createSession(coupleId: string, gameType: GameType) {
+  async createSession(coupleId: string, gameType: string) {
     return this.prisma.gameSession.create({
-      data: { coupleId, gameType, status: 'WAITING', data: {} },
+      data: { coupleId, gameType, status: 'WAITING', data: '{}' },
     });
   }
 
@@ -59,7 +59,7 @@ export class MinigamesService {
   async spinRoulette(coupleId: string) {
     const result = ROULETTE_OPTIONS[Math.floor(Math.random() * ROULETTE_OPTIONS.length)];
     await this.prisma.gameSession.create({
-      data: { coupleId, gameType: 'ROULETTE', status: 'FINISHED', data: result },
+      data: { coupleId, gameType: 'ROULETTE', status: 'FINISHED', data: JSON.stringify(result) },
     });
     this.gateway.emitToCouple(coupleId, 'game:state', { type: 'ROULETTE', result });
     return result;
